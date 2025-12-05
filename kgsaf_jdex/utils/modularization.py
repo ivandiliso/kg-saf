@@ -1,9 +1,11 @@
+#!/usr/bin/env python3
 import sys
 from pathlib import Path
+
+import utils.conventions.paths as pc
+from rdflib import OWL, RDF, RDFS, BNode, Graph, URIRef
 from utils.conventions.builtins import BUILTIN_URIS
-from rdflib import Graph, URIRef, BNode, RDF, RDFS, OWL
-import  utils.conventions.paths as pc
-from utils.conventions.builtins import BUILTIN_URIS
+
 
 class SignatureModularizer:
     def __init__(self, schema, seed):
@@ -26,8 +28,8 @@ class SignatureModularizer:
 
             print(f"Processing {e}")
 
-            for s,p,o in self.schema.triples((e, None, None)):
-                extracted_graph.add((s,p,o))
+            for s, p, o in self.schema.triples((e, None, None)):
+                extracted_graph.add((s, p, o))
 
                 if (o not in BUILTIN_URIS) and (o not in processed):
 
@@ -44,33 +46,39 @@ class SignatureModularizer:
                         elem_to_process.add(o)
 
         return extracted_graph
-    
+
 
 class SchemaDecomposition:
     def __init__(self, input_graph):
         self.onto_graph = input_graph
-    
-    def decompose(self):
-        return self._rbox_decompose(), self._taxonomy_decompose(), self._schema_decompose()
 
+    def decompose(self):
+        return (
+            self._rbox_decompose(),
+            self._taxonomy_decompose(),
+            self._schema_decompose(),
+        )
 
     def _rbox_decompose(self):
         rbox_graph = Graph()
-        for prop in set(self.onto_graph.subjects(RDF.type, OWL.ObjectProperty)) - BUILTIN_URIS:
+        for prop in (
+            set(self.onto_graph.subjects(RDF.type, OWL.ObjectProperty)) - BUILTIN_URIS
+        ):
             rbox_graph += self._extract_description(prop)
 
-        for prop in set(self.onto_graph.subjects(RDF.type, OWL.DatatypeProperty)) - BUILTIN_URIS:
+        for prop in (
+            set(self.onto_graph.subjects(RDF.type, OWL.DatatypeProperty)) - BUILTIN_URIS
+        ):
             rbox_graph += self._extract_description(prop)
         return rbox_graph
-
 
     def _taxonomy_decompose(self):
         taxonomy_graph = Graph()
 
         for c in set(self.onto_graph.subjects(RDF.type, OWL.Class)) - BUILTIN_URIS:
-            for s,p,o in self.onto_graph.triples((c, None, None)):
+            for s, p, o in self.onto_graph.triples((c, None, None)):
                 if p == RDFS.subClassOf:
-                    taxonomy_graph.add((s,p,o))
+                    taxonomy_graph.add((s, p, o))
                     if isinstance(o, BNode):
                         taxonomy_graph += self._extract_description(o)
 
@@ -81,10 +89,10 @@ class SchemaDecomposition:
 
         for c in set(self.onto_graph.subjects(RDF.type, OWL.Class)) - BUILTIN_URIS:
             if not isinstance(c, BNode):
-                for s,p,o in self.onto_graph.triples((c, None, None)):
+                for s, p, o in self.onto_graph.triples((c, None, None)):
                     if p != RDFS.subClassOf:
-                        
-                        schema_graph.add((s,p,o))
+
+                        schema_graph.add((s, p, o))
 
                         for elem in self.onto_graph.objects(o, RDF.type):
                             schema_graph.add((o, RDF.type, elem))
@@ -108,8 +116,8 @@ class SchemaDecomposition:
 
             print(f"Processing {e}")
 
-            for s,p,o in self.onto_graph.triples((e, None, None)):
-                extracted_graph.add((s,p,o))
+            for s, p, o in self.onto_graph.triples((e, None, None)):
+                extracted_graph.add((s, p, o))
 
                 if (o not in BUILTIN_URIS) and (o not in processed):
                     if isinstance(o, BNode):
@@ -125,4 +133,3 @@ class SchemaDecomposition:
                         extracted_graph.add((o, RDF.type, OWL.DatatypeProperty))
 
         return extracted_graph
-
