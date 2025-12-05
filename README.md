@@ -4,62 +4,59 @@
 ![GitHub License](https://img.shields.io/github/license/ivandiliso/sphm4kg)
 ![Python Version](https://img.shields.io/badge/python-3.12.8%2B-blue)
 
-
-## Available Datases
+### Available Ontologies (Schema)
+```
+📚 DBpedia
+📚 YAGO3
+📚 YAGO4
+📚 ArCo
+📚 WHOW
+📚 ApuliaTravel
+```
+### Available Datases
+```
+📚 YAGO 
+    ├── 🗂️ YAGO4-20-C................................ # 
+    ├── 🗂️ YAGO3-39K-C .............................. # 
+    └── 🗂️ YAGO3-10-C................................ #
+📚 DBPEDIA 
+    ├── 🗂️ DBPEDIA25-50K ............................ # 
+    └── 🗂️ DBPEDIA25-100K ........................... # 
+📚 ARCO 
+    ├── 🗂️ ARCO25-20 ................................ # 
+    ├── 🗂️ ARCO25-10 ................................ #
+    └── 🗂️ ARCO25-5 ................................. #
+📚 OTHER 
+    ├── 🗂️ APULIATRAVEL ............................. #
+    └── 🗂️ WHOW25-5 ................................. #
 
 ```
-📚 YAGO ............................................. # 
-│   ├── 🗂️ YAGO4-20-C................................ # 
-│   ├── 🗂️ YAGO3-39K-C .............................. # 
-│   ├── 🗂️ YAGO3-10-C................................ # 
-
-
-📚 DBPEDIA .......................................... # 
-│   ├── 🗂️ DBPEDIA25-50K ............................ # 
-│   ├── 🗂️ DBPEDIA25-100K ........................... # 
-
-📚 ARCO ............................................. # 
-│   ├── 🗂️ ARCO25-20 ................................ # 
-│   ├── 🗂️ ARCO25-10 ................................ #
-│   ├── 🗂️ ARCO25-5 ................................. #
-
-📚 OTHER ............................................ # 
-│   ├── 🗂️ APULIATRAVEL ............................. #
-│   ├── 🗂️ WHOW25-5 ................................. #
-
-```
-
-## Dataset Standard Structure
-
+### Dataset File Structure
 ```
 📁 abox ............................................. # Assertional Box (instance-level data)
 │   ├── 📁 splits ................................... # Train/test/validation splits
-│   │   ├── 📜 test.nt .............................. # Test triples (N-Triples)
-│   │   ├── 📜 test.txt ............................. # Test triples (Text)
-│   │   ├── 📜 train.nt ............................. # Training triples (N-Triples)
-│   │   ├── 📜 train.txt ............................ # Training triples (Text)
-│   │   ├── 📜 valid.nt ............................. # Validation triples (N-Triples)
-│   │   └── 📜 valid.txt ............................ # Validation triples (Text)
+│   │   ├── 🦉 test.nt .............................. # Test triples (N-Triples)
+│   │   ├── 📜 test.tsv ............................. # Test triples (TSV)
+│   │   ├── 🦉 train.nt ............................. # Training triples (N-Triples)
+│   │   ├── 📜 train.tsv ............................ # Training triples (TSV)
+│   │   ├── 🦉 valid.nt ............................. # Validation triples (N-Triples)
+│   │   └── 📜 valid.tsv ............................ # Validation triples (TSV)
 │   │ 
-│   ├── 📜 triples.nt ............................... # Combined triples (N-Triples)
-│   ├── 📜 triples.txt .............................. # Combined triples (Text)
+│   ├── 🦉 obj_prop_assertions.nt ................... # Combined triples (N-Triples)
+│   ├── 📜 obj_prop_assertions.tsv .................. # Combined triples (TSV)
 │   │ 
-│   ├── 🧾 class_assertions.json .................... # Class membership data (JSON)
-│   └── 🦉 class_assertions.owl ..................... # Class membership data (OWL)
+│   ├── 🦉 individuals.owl .......................... # Individuals definitions
+│   └── 🦉 class_assertions.owl ..................... # Individuals class assertions 
 
 📁 rbox ............................................. # Role Box (relations and properties)
-│   ├── 🦉 roles.owl ................................ # Role definitions (OWL)
-|   ├── 🧾 roles_hierarchy.json ......................# Role Hierarchy (Subproperty, JSON)
-│   └── 🧾 roles_domain_range.json .................. # Domain and range constraints (JSON)
+│   ├── 🦉 roles.owl ................................ # Role definitions
 
 📁 tbox ............................................. # Terminological Box (schema-level info)
-│   ├── 🦉 schema.owl ............................... # Ontology schema (OWL)
-│   ├── 🧾 taxonomy.json ............................ # Hierarchical taxonomy (JSON)
-│   ├── 🦉 taxonomy.owl ............................. # Hierarchical taxonomy (OWL)
+│   ├── 🦉 classes.owl .............................. # Classs non taxonomical Axioms
+│   ├── 🦉 taxonomy.owl ............................. # Hierarchical taxonomy
 
-🦉 knowledge_graph.owl .............................. # Full merged ontology + instances
-🦉 ontology.owl ..................................... # Core ontology definition
-📘 README.md ........................................ # Documentation and usage notes
+🦉 knowledge_graph.owl .............................. # Full merged TBox + RBox + ABox
+🦉 ontology.owl ..................................... # Core Modularized Schema
 
 📁 mappings ......................................... # Mappings to IDs
 │   ├── 🧾 class_to_id.json ......................... # Map ontology classes to IDs
