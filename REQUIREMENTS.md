@@ -1,6 +1,6 @@
 # KG-SaF Requirements
 
-## Environment Requirements
+## 1. Environment Requirements
 
 ### Programming Languages
 - **Python**: 3.9 or later  

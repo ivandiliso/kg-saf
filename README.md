@@ -4,33 +4,17 @@
 ![GitHub License](https://img.shields.io/github/license/ivandiliso/sphm4kg)
 ![Python Version](https://img.shields.io/badge/python-3.12.8%2B-blue)
 
-### Available Ontologies (Schema)
-```
-📚 DBpedia
-📚 YAGO3
-📚 YAGO4
-📚 ArCo
-📚 WHOW
-📚 ApuliaTravel
-```
-### Available Datases
-```
-📚 YAGO 
-    ├── 🗂️ YAGO4-20-C................................ # 
-    ├── 🗂️ YAGO3-39K-C .............................. # 
-    └── 🗂️ YAGO3-10-C................................ #
-📚 DBPEDIA 
-    ├── 🗂️ DBPEDIA25-50K ............................ # 
-    └── 🗂️ DBPEDIA25-100K ........................... # 
-📚 ARCO 
-    ├── 🗂️ ARCO25-20 ................................ # 
-    ├── 🗂️ ARCO25-10 ................................ #
-    └── 🗂️ ARCO25-5 ................................. #
-📚 OTHER 
-    ├── 🗂️ APULIATRAVEL ............................. #
-    └── 🗂️ WHOW25-5 ................................. #
+### Available Ontologies (Schema) and Datasets (KG-SaF-Datasets)
+| Ontology | Datasets |
+|----------|---------|
+| 📚 [DBpedia](https://www.dbpedia.org/resources/ontology/) | `DBPEDIA25-50K-C`, `DBPEDIA25-100K-C` |
+| 📚 [YAGO3](https://yago-knowledge.org/downloads/yago-3) | `YAGO3-39K-C`, `YAGO3-10-C` |
+| 📚 [YAGO4](https://yago-knowledge.org/downloads/yago-4) | `YAGO4-20-C` |
+| 📚 [ArCo](http://wit.istc.cnr.it/arco) | `ARCO25-20`, `ARCO25-10`, `ARCO25-5` |
+| 📚 [WHOW](https://whowproject.eu/) | `WHOW25-5` |
+| 📚 [ApuliaTravel](https://github.com/rbarile17/ApuliaTravelKG) | `ATRAVEL` |
 
-```
+
 ### Dataset File Structure
 ```
 📁 abox ............................................. # Assertional Box (instance-level data)
