@@ -10,7 +10,7 @@
 ### Key Features
 - 🗂️ Extracts datasets from RDF-based KGs with expressive schemas (RDFS/OWL2)  
 - 📦 Provides datasets in **OWL** and **TSV** formats, easily loadable in both **PyTorch** and **Protege**  
-- ⚡ Handles inconsistencies and leverages reasoning to infer implicit knowledge (entailment, realization, materialization)  
+- ⚡ Handles inconsistencies and leverages reasoning to infer implicit knowledge
 - 🤖 Provides ML-ready **tensor representations** compatible with PyTorch and PyKEEN  
 - 🧩 Offers **schema decomposition** into themed partitions (modularization of ontology components)
 
