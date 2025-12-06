@@ -69,4 +69,29 @@ All datasets are provided in a **standardized format** following the **Descripti
 │   └── 🧾 object_property_to_id.json ............... # Map object properties to IDs
 ```
 
-## Code and Workflow Documentation (*KG-SaF-JDeX*)
+## Dataset Unpacking 
+
+Before using the datasets, you must run the provided **dataset unpacking notebook**. This step is required because, due to storage limitations, some secondary files were removed from the distributed datasets.  The script automates the following tasks:
+
+1. **Unpacking all compressed datasets and ontologies** into an `unpack` folder.  
+2. **Re-merging object property assertion files** for each dataset.  
+3. **Merging the full knowledge graph** (TBox, RBox, and ABox) using a reasoner (Robot OBO Tool).  
+4. **Converting N-Triples files to TSV format**, making them ready for use with ML libraries such as **PyKEEN**.  
+
+Open the notebook and **run all cells** sequentially. After execution, each dataset folder will contain:
+
+- Fully merged **knowledge graph** (`knowledge_graph.owl`)  
+- **Object property assertions** (`obj_prop_assertions.nt` and `.tsv`)  
+- **Training, test, and validation splits** in TSV format (`train.tsv`, `test.tsv`, `valid.tsv`)  
+
+## Tutorials
+
+In the `tutorial` folder, we provide example notebooks demonstrating how to use KG-SaF datasets and tools.
+
+1. **Loading a PyTorch dataset using the custom `KnowledgeGraph` class**  
+   - File: `tutorial/dataset_loader.ipynb`  
+   - Description: Shows how to load a dataset from KG-SaF into PyTorch tensors using the `KnowledgeGraph` class, including train/test/validation splits and schema-aware representations.  
+
+2. **Proof of concept: Using PyKEEN for machine learning on KG-SaF datasets**  
+   - File: `tutorial/kge_pykeen.ipynb`  
+   - Description: Demonstrates a basic pipeline for training a Knowledge Graph Embedding (KGE) model using PyKEEN on one of the KG-SaF datasets, including evaluation.  
