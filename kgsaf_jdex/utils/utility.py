@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 def verbose_print(msg: str, verbose: bool):
     """Primg msg if verbose is true
 

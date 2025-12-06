@@ -1,10 +1,14 @@
-import torch
-from torch.utils.data import Dataset
+#!/usr/bin/env python3
+
 from pathlib import Path
-import utils.conventions.paths as pc
-import utils.conventions.ids as idc
-import json
-from rdflib import URIRef, OWL
+
+import jso
+import torch
+from rdflib import OWL, URIRef
+from torch.utils.data import Dataset
+
+import kgsaf_jdex.utils.conventions.ids as idc
+import kgsaf_jdex.utils.conventions.paths as pc
 
 
 class KnowledgeGraph(Dataset):
@@ -31,13 +35,13 @@ class KnowledgeGraph(Dataset):
         self._obj_prop_to_id = self._load_mappings(pc.OBJ_PROP_MAPPINGS)
 
         self._class_to_id[str(OWL.Thing)] = idc.THING
-        self._class_to_id[str('http://schema.org/Thing')] = idc.THING
+        self._class_to_id[str("http://schema.org/Thing")] = idc.THING
 
-        self._id_to_individual = {v:k for k,v in self._individual_to_id.items()}
-        self._id_to_class = {v:k for k,v in self._class_to_id.items()}
-        self._id_to_obj_prop = {v:k for k,v in self._obj_prop_to_id.items()}
+        self._id_to_individual = {v: k for k, v in self._individual_to_id.items()}
+        self._id_to_class = {v: k for k, v in self._class_to_id.items()}
+        self._id_to_obj_prop = {v: k for k, v in self._obj_prop_to_id.items()}
 
-        # ABox 
+        # ABox
 
         self._train_triples = self._load_abox_triples(pc.TRAIN)
         self._test_triples = self._load_abox_triples(pc.TEST)
@@ -45,16 +49,14 @@ class KnowledgeGraph(Dataset):
 
         self._class_assertions = self._load_abox_class_assertions()
 
-        # TBox 
+        # TBox
 
         self._taxonomy = self._load_tbox_taxonomy()
 
-        # RBox 
+        # RBox
 
         self._obj_prop_domain_range = self._load_rbox_domain_range()
         self._obj_prop_hierarchy = self._load_rbox_hierarchy()
-
-
 
     # General Functions
 
@@ -70,34 +72,38 @@ class KnowledgeGraph(Dataset):
 
     def obj_prop_to_id(self, obj_prop_uri: str) -> int:
         return self._obj_prop_to_id[obj_prop_uri]
-    
+
     def id_to_individual(self, individual_id: int) -> str:
         return self._id_to_individual[individual_id]
-    
+
     def id_to_class(self, class_id: int) -> str:
         return self._id_to_class[class_id]
-    
+
     def id_to_obj_prop(self, obj_prop_id: int) -> str:
         return self._id_to_obj_prop[obj_prop_id]
 
     def individual_classes(self, individual_id: int) -> torch.tensor:
         return self.class_assertions[self.class_assertions[:, 0] == individual_id, 1]
-    
+
     def sup_classes(self, class_id: int) -> torch.tensor:
         return self.taxonomy[self.taxonomy[:, 0] == class_id, 1]
-    
+
     def sub_classes(self, class_id: int) -> torch.tensor:
         return self.taxonomy[self.taxonomy[:, 1] == class_id, 0]
-    
+
     def sup_obj_prop(self, obj_prop_id: int) -> torch.tensor:
-        return self.obj_props_hierarchy[self.obj_props_hierarchy[:, 0] == obj_prop_id, 1]
-    
+        return self.obj_props_hierarchy[
+            self.obj_props_hierarchy[:, 0] == obj_prop_id, 1
+        ]
+
     def sub_obj_prop(self, obj_prop_id: int) -> torch.tensor:
-        return self.obj_props_hierarchy[self.obj_props_hierarchy[:, 1] == obj_prop_id, 0]
-    
+        return self.obj_props_hierarchy[
+            self.obj_props_hierarchy[:, 1] == obj_prop_id, 0
+        ]
+
     def obj_prop_domain(self, obj_prop_id: int) -> torch.tensor:
         return self.obj_props_domain[self.obj_props_domain[:, 0] == obj_prop_id, 1]
-    
+
     def obj_prop_range(self, obj_prop_id: int) -> torch.tensor:
         return self.obj_props_range[self.obj_props_range[:, 0] == obj_prop_id, 1]
 
@@ -122,23 +128,27 @@ class KnowledgeGraph(Dataset):
     @property
     def class_assertions(self) -> torch.tensor:
         return self._class_assertions
-    
+
     @property
     def taxonomy(self) -> torch.tensor:
         return self._taxonomy
-    
+
     @property
     def obj_props_hierarchy(self) -> torch.tensor:
         return self._obj_prop_hierarchy
-    
+
     @property
     def obj_props_domain(self) -> torch.tensor:
-        return self._obj_prop_domain_range[self._obj_prop_domain_range[:,1] == idc.DOMAIN][:, [0,2]]
-    
+        return self._obj_prop_domain_range[
+            self._obj_prop_domain_range[:, 1] == idc.DOMAIN
+        ][:, [0, 2]]
+
     @property
     def obj_props_range(self) -> torch.tensor:
-        return self._obj_prop_domain_range[self._obj_prop_domain_range[:,1] == idc.RANGE][:, [0,2]]
-    
+        return self._obj_prop_domain_range[
+            self._obj_prop_domain_range[:, 1] == idc.RANGE
+        ][:, [0, 2]]
+
     @property
     def obj_props_domains_range(self) -> torch.tensor:
         return self._obj_prop_domain_range
@@ -194,35 +204,33 @@ class KnowledgeGraph(Dataset):
                 taxonomy.append([c_id, sup_c_id])
 
         return torch.tensor(taxonomy, dtype=torch.int64)
-    
 
-    # RBOX Loading Functions 
+    # RBOX Loading Functions
 
     def _load_rbox_domain_range(self):
         if not (self.base_path / pc.OBJ_PROP_HIERARCHY).exists():
             return torch.tensor([])
-        
+
         with open(self.base_path / pc.OBJ_PROP_DOMAIN_RANGE, "r") as role_dm_json:
             data = json.load(role_dm_json)
 
         dm = []
-    
-        for r_uri in data:
-                r_id = self.obj_prop_to_id(r_uri)
-                domain = self._compute_domain_range(data[r_uri]["domain"])
-                range = self._compute_domain_range(data[r_uri]["range"])
 
-                for id in domain:
-                    dm.append([r_id, idc.DOMAIN, id])
-                for id in range:
-                    dm.append([r_id, idc.RANGE, id])
+        for r_uri in data:
+            r_id = self.obj_prop_to_id(r_uri)
+            domain = self._compute_domain_range(data[r_uri]["domain"])
+            range = self._compute_domain_range(data[r_uri]["range"])
+
+            for id in domain:
+                dm.append([r_id, idc.DOMAIN, id])
+            for id in range:
+                dm.append([r_id, idc.RANGE, id])
 
         return torch.tensor(dm, dtype=torch.int64)
-                
 
     def _compute_domain_range(self, subdata):
         out = []
-        for elem in subdata:     
+        for elem in subdata:
             if type(elem) is dict and str(OWL.unionOf) in elem.keys():
                 for unionclass in elem[str(OWL.unionOf)]:
                     out.append(self.class_to_id(unionclass))
@@ -230,27 +238,21 @@ class KnowledgeGraph(Dataset):
                 out.append(self.class_to_id(elem))
         return out
 
-
-             
-
-        
     def _load_rbox_hierarchy(self):
         if not (self.base_path / pc.OBJ_PROP_HIERARCHY).exists():
             return torch.tensor([])
-        
+
         rh = []
-        
+
         with open(self.base_path / pc.OBJ_PROP_HIERARCHY, "r") as role_h_json:
             data = json.load(role_h_json)
 
         for r_uri in data:
             r_id = self.obj_prop_to_id(r_uri)
             for sup_r_uri in data[r_uri]:
-               rh.append([r_id, self.obj_prop_to_id(sup_r_uri)])
- 
+                rh.append([r_id, self.obj_prop_to_id(sup_r_uri)])
+
         return torch.tensor(rh, dtype=torch.int64)
-
-
 
 
 if __name__ == "__main__":
@@ -293,7 +295,6 @@ if __name__ == "__main__":
     for c in sub_cls:
         print("\t\t", kg.id_to_class(c))
 
-    
     print("")
 
     print(f"Testing the Role Hierarhcy of {hr_uri_test}")
@@ -311,7 +312,6 @@ if __name__ == "__main__":
     for c in sub_cls:
         print("\t\t", kg.id_to_obj_prop(c))
 
-    
     print("")
 
     print(f"Testing the Role Hierarhcy of {hdr_uri_test}")
@@ -328,12 +328,3 @@ if __name__ == "__main__":
 
     for c in range:
         print("\t\t", kg.id_to_class(c))
-
-    
-
-
-
-
-
-
-
