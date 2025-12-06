@@ -12,6 +12,6 @@
   - Requires Java 11+
 
 ## 2. System Dependencies
-- Operating System: Linux / macOS / Windows (choose your target)
+- Operating System: **Linux** (project is developed and tested on Linux; requirements should be the same for macOS and Windows)
 - Memory: 8 GB minimum (16 GB reccommended for reasoning services)
 - Disk space: 15 GB for datasets and ontologies
