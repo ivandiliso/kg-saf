@@ -2,7 +2,7 @@
 
 from pathlib import Path
 
-import jso
+import json
 import torch
 from rdflib import OWL, URIRef
 from torch.utils.data import Dataset
@@ -23,6 +23,8 @@ class KnowledgeGraph(Dataset):
         """
 
         super().__init__()
+
+        
 
         # Dataset BASE Folder
 
@@ -60,6 +62,9 @@ class KnowledgeGraph(Dataset):
 
     # General Functions
 
+    def _warning(self, count):
+        print(f"WARNING: {count} complex URIs detected. These classes are skipped during loading.")
+
     def _load_mappings(self, file_location: str):
         with open(self.base_path / file_location, "r") as map_json:
             return json.load(map_json)
@@ -90,6 +95,9 @@ class KnowledgeGraph(Dataset):
 
     def sub_classes(self, class_id: int) -> torch.tensor:
         return self.taxonomy[self.taxonomy[:, 1] == class_id, 0]
+    
+    def is_leaf(self, class_id: int) -> bool:
+        return len(self.sub_classes(class_id)) == 0
 
     def sup_obj_prop(self, obj_prop_id: int) -> torch.tensor:
         return self.obj_props_hierarchy[
@@ -193,6 +201,7 @@ class KnowledgeGraph(Dataset):
             return torch.tensor([])
 
         taxonomy = []
+        complex_uri = 0
 
         with open(self.base_path / pc.TAXONOMY, "r") as taxonomy_json:
             data = json.load(taxonomy_json)
@@ -200,9 +209,17 @@ class KnowledgeGraph(Dataset):
         for c_uri in data:
             c_id = self.class_to_id(c_uri)
             for sup_c_uri in data[c_uri]:
-                sup_c_id = self.class_to_id(sup_c_uri)
-                taxonomy.append([c_id, sup_c_id])
 
+                if isinstance(sup_c_uri, dict):
+                    complex_uri += 1
+                    
+                else:
+                    sup_c_id = self.class_to_id(sup_c_uri)
+                    taxonomy.append([c_id, sup_c_id])
+
+        if complex_uri > 0:
+            self._warning(complex_uri)
+                
         return torch.tensor(taxonomy, dtype=torch.int64)
 
     # RBOX Loading Functions
@@ -210,6 +227,8 @@ class KnowledgeGraph(Dataset):
     def _load_rbox_domain_range(self):
         if not (self.base_path / pc.OBJ_PROP_HIERARCHY).exists():
             return torch.tensor([])
+        
+        complex_uri = 0
 
         with open(self.base_path / pc.OBJ_PROP_DOMAIN_RANGE, "r") as role_dm_json:
             data = json.load(role_dm_json)
@@ -218,31 +237,42 @@ class KnowledgeGraph(Dataset):
 
         for r_uri in data:
             r_id = self.obj_prop_to_id(r_uri)
-            domain = self._compute_domain_range(data[r_uri]["domain"])
-            range = self._compute_domain_range(data[r_uri]["range"])
+            domain, ex_d = self._compute_domain_range(data[r_uri]["domain"])
+            range, ex_r = self._compute_domain_range(data[r_uri]["range"])
+
+            complex_uri += ex_d
+            complex_uri += ex_r
 
             for id in domain:
+
                 dm.append([r_id, idc.DOMAIN, id])
             for id in range:
                 dm.append([r_id, idc.RANGE, id])
+
+        if complex_uri > 0:
+            self._warning(complex_uri)
 
         return torch.tensor(dm, dtype=torch.int64)
 
     def _compute_domain_range(self, subdata):
         out = []
+        excluded = 0
         for elem in subdata:
             if type(elem) is dict and str(OWL.unionOf) in elem.keys():
                 for unionclass in elem[str(OWL.unionOf)]:
                     out.append(self.class_to_id(unionclass))
+            elif type(elem) is dict:
+                excluded += 1
             else:
                 out.append(self.class_to_id(elem))
-        return out
+        return out, excluded
 
     def _load_rbox_hierarchy(self):
         if not (self.base_path / pc.OBJ_PROP_HIERARCHY).exists():
             return torch.tensor([])
 
         rh = []
+        complex_uri = 0
 
         with open(self.base_path / pc.OBJ_PROP_HIERARCHY, "r") as role_h_json:
             data = json.load(role_h_json)
@@ -250,7 +280,13 @@ class KnowledgeGraph(Dataset):
         for r_uri in data:
             r_id = self.obj_prop_to_id(r_uri)
             for sup_r_uri in data[r_uri]:
-                rh.append([r_id, self.obj_prop_to_id(sup_r_uri)])
+                if type(sup_r_uri) is dict:
+                    complex_uri += 1
+                else:
+                    rh.append([r_id, self.obj_prop_to_id(sup_r_uri)])
+
+        if complex_uri > 0:
+            self._warning(complex_uri)
 
         return torch.tensor(rh, dtype=torch.int64)
 
@@ -258,13 +294,13 @@ class KnowledgeGraph(Dataset):
 if __name__ == "__main__":
 
     kg = KnowledgeGraph(
-        path="/home/navis/dev/semantic-web-datasets/datasets/✅ARCO25-5-REASONED"
+        path="/home/navis/dev/kg-saf/kgsaf_data/datasets/materialize/unpack/ARCO25-5-MATERIALIZE"
     )
 
-    individual_uri_test = list(kg.individual_to_id.keys())[0]
-    class_uri_test = list(kg.class_to_id.keys())[0]
-    hr_uri_test = list(kg.obj_prop_to_id.keys())[0]
-    hdr_uri_test = list(kg.obj_prop_to_id.keys())[0]
+    individual_uri_test = list(kg._individual_to_id.keys())[0]
+    class_uri_test = list(kg._class_to_id.keys())[0]
+    hr_uri_test = list(kg._obj_prop_to_id.keys())[0]
+    hdr_uri_test = list(kg._obj_prop_to_id.keys())[0]
 
     print(kg.train.shape)
     print(kg.test.shape)
@@ -274,26 +310,27 @@ if __name__ == "__main__":
 
     print("")
 
-    print(f"Testing the Class Assertions of {individual_uri_test}")
+    print(f"Testing the Class Assertions of [{kg.individual_to_id(individual_uri_test)}] {individual_uri_test}")
     cls = kg.individual_classes(kg.individual_to_id(individual_uri_test)).tolist()
+    print(f"\t Tensor {cls}")
     for c in cls:
-        print("\t", kg.id_to_class(c))
+        print(f"\t [{c}] {kg.id_to_class(c)}")
 
     print("")
 
-    print(f"Testing the Hierarchy of {class_uri_test}")
+    print(f"Testing the Hierarchy of [{kg.class_to_id(class_uri_test)}] {class_uri_test}. Leaf class? {kg.is_leaf(kg.class_to_id(class_uri_test))}")
     sup_cls = kg.sup_classes(kg.class_to_id(class_uri_test)).tolist()
     sub_cls = kg.sub_classes(kg.class_to_id(class_uri_test)).tolist()
 
     print("\t", "Superclasses")
-
+    print(f"\t\t Tensor: {sup_cls}")
     for c in sup_cls:
-        print("\t\t", kg.id_to_class(c))
+         print(f"\t\t [{c}] {kg.id_to_class(c)}")
 
     print("\t", "Subclasses")
-
+    print(f"\t\t Tensor: {sub_cls}")
     for c in sub_cls:
-        print("\t\t", kg.id_to_class(c))
+         print(f"\t\t [{c}] {kg.id_to_class(c)}")
 
     print("")
 
@@ -312,9 +349,11 @@ if __name__ == "__main__":
     for c in sub_cls:
         print("\t\t", kg.id_to_obj_prop(c))
 
+   
     print("")
-
+    
     print(f"Testing the Role Hierarhcy of {hdr_uri_test}")
+    
 
     domain = kg.obj_prop_domain(kg.obj_prop_to_id(hdr_uri_test)).tolist()
     range = kg.obj_prop_range(kg.obj_prop_to_id(hdr_uri_test)).tolist()
